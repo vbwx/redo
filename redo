@@ -1,0 +1,44 @@
+#!/bin/bash
+
+function recurse {
+	declare -x INDEX=0 COUNT=$#
+	[ $DEPTH -eq 0 ] && RCOUNT=$#
+	for d in "$@"; do
+		[ $DEPTH -eq 0 ] && RINDEX=$((RINDEX+1))
+		INDEX=$((INDEX+1))
+		cd "$d" || continue
+		DEPTH=$((DEPTH+1))
+		RUNS=$((RUNS+1))
+		DIR=${d//\//}
+		CWD=${PWD#*$ROOT/}
+		printf "$script" | $program $args
+		recurse */
+		DEPTH=$((DEPTH-1))
+		cd ..
+	done
+}
+
+shopt -s nullglob
+
+_IFS=$IFS
+IFS=$'\n'
+read program
+script=$(</dev/stdin)
+if [[ ${program:0:2} = "#!" ]]; then
+	IFS=$_IFS
+	program=(${program:2})
+	IFS=$'\n'
+	args="${program[@]:1}"
+	program=${program[@]:0:1}
+else
+	script="${program}\n${script}"
+	program=$SHELL
+	args=
+fi
+
+export DIR CWD RCOUNT RINDEX=0 DEPTH=0 RUNS=0 ROOT=$PWD ARGS=($args)
+if [[ $# = 0 ]]; then
+	recurse */
+else
+	recurse "$@"
+fi
