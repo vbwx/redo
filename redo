@@ -20,6 +20,23 @@ function recurse {
 
 shopt -s nullglob
 
+if [[ $1 == "--help" ]]; then
+	cat <<'EOF'
+usage: redo [-exclude_glob ...] [+include_glob ...] [dir ...] < script
+variables: $DIR, $CWD, $COUNT, $INDEX, $DEPTH, $RUNS
+           $ROOT, $ARGS, $RCOUNT, $RINDEX
+
+STDIN instead of redirecting a script is often more useful.
+Without dir arguments, all directories are traversed.
+Without a shebang in the first line of the script, $SHELL is assumed.
+EOF
+	exit
+fi
+if [[ $1 == "--version" ]]; then
+	echo "redo 1.0"
+	echo "Copyright 2017 Bernhard Waldbrunner"
+	exit
+fi
 _IFS=$IFS
 IFS=$'\n'
 read program
