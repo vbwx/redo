@@ -7,22 +7,36 @@ function recurse {
 	for d in "$@"; do
 		[ $DEPTH -eq 0 ] && ((RINDEX++))
 		((INDEX++))
+		d="${d%/}"
 		[[ -d $d && -x $d && -r $d ]] || continue
-		cd "$d"
+		[[ $nocd ]] || cd "$d"
 		((DEPTH++))
 		((RUNS++))
 
 		if [ ${#indir[*]} -gt 0 ]; then
-			dirs=(${indir[*]})
+			if [[ $nocd ]]; then
+				dirs=(${indir[*]/#/$d/})
+			else
+				dirs=(${indir[*]})
+			fi
 		else
-			dirs=(*/)
+			if [[ $nocd ]]; then
+				dirs=("$d"/*/)
+			else
+				dirs=(*/)
+			fi
 		fi
 		if [ ${#exdir[*]} -gt 0 ]; then
-			for ex in ${exdir[*]}; do
+			if [[ $nocd ]]; then
+				exclude=(${exdir[*]/#/$d/})
+			else
+				exclude=(${exdir[*]})
+			fi
+			count=${#dirs[*]}
+			for e in ${exclude[*]}; do
 				i=0
-				count=${#dirs[*]}
 				while [ $i -lt $count ]; do
-					if [[ ${dirs[$i]%/} == ${ex%/} ]]; then
+					if [[ ${dirs[i]%/} == ${e%/} ]]; then
 						unset 'dirs[i]'
 						break
 					fi
@@ -31,12 +45,12 @@ function recurse {
 			done
 		fi
 
-		DIR=${d//\//}
-		CWD=${PWD#*$ROOT/}
+		DIR="$d"
+		[[ $nocd ]] || CWD="${PWD#*$ROOT/}"
 		printf "$script" | $program ${ARGS[*]}
 		recurse "${dirs[@]}"
 		((DEPTH--))
-		cd ..
+		[[ $nocd ]] || cd ..
 	done
 }
 
@@ -44,7 +58,7 @@ shopt -s nullglob
 
 if [[ $1 == "--help" ]]; then
 	cat <<-'EOF'
-		usage: redo [-exclude_glob ...] [+include_glob ...] [dir ...] < script
+		usage: redo [.] [+include_glob ...] [-exclude_glob ...] [dir ...] < script
 		variables: $DIR, $CWD, $COUNT, $INDEX, $DEPTH, $RUNS
 		           $ROOT, $ARGS, $RCOUNT, $RINDEX
 	EOF
@@ -59,6 +73,7 @@ fi
 indir=()
 exdir=()
 dirs=()
+nocd=
 export DIR CWD RCOUNT ARGS RINDEX=0 DEPTH=0 RUNS=0 ROOT="$PWD"
 
 for arg in "$@"; do
@@ -66,6 +81,9 @@ for arg in "$@"; do
 		exdir[${#exdir[*]}]="${arg:1}"
 	elif [[ ${arg:0:1} == '+' ]]; then
 		indir[${#indir[*]}]="${arg:1}"
+	elif [[ $arg == '.' ]]; then
+		nocd=1
+		CWD="."
 	else
 		dirs[${#dirs[*]}]="$arg"
 	fi
