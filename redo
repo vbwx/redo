@@ -91,20 +91,16 @@ done
 
 [ ${#dirs[*]} -eq 0 ] && dirs=(*/)
 
-_IFS=$IFS
-IFS=$'\n'
-read program
+IFS=$'\n' read program
 script=$(</dev/stdin)
 if [[ ${program:0:2} == '#!' ]]; then
-	IFS=$_IFS
 	program=(${program:2})
 	ARGS=(${program[@]:1})
 	program=${program[@]:0:1}
-	IFS=$'\n'
 else
 	script="${program}\n${script}"
 	program=$SHELL
 	args=
 fi
 
-recurse "${dirs[@]}"
+IFS=$'\n' recurse "${dirs[@]}"
