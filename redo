@@ -98,7 +98,7 @@ if [[ ${program:0:2} == '#!' ]]; then
 	ARGS=(${program[@]:1})
 	program=${program[@]:0:1}
 else
-	script="${program}\n${script}"
+	script="$program"$'\n'"$script"
 	program=$SHELL
 	args=
 fi
