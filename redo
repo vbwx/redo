@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -eu
+shopt -s nullglob
+IFS=$'\t\n'
+
 function recurse {
 	declare -x INDEX=0 COUNT=$#
 	[ $DEPTH -eq 0 ] && RCOUNT=$#
@@ -8,16 +12,23 @@ function recurse {
 		[ $DEPTH -eq 0 ] && ((RINDEX++))
 		((INDEX++))
 		d="${d%/}"
-		[[ -d $d && -x $d && -r $d ]] || continue
+		if ! [[ -d $d ]]; then
+			echo "redo: $CWD/$d: No such directory" >&2
+			continue
+		fi
+		if ! [[ -x $d && -r $d ]]; then
+			echo "redo: $CWD/$d: Permission denied" >&2
+			continue
+		fi
 		[[ $nocd ]] || cd "$d"
 		((DEPTH++))
 		((RUNS++))
 
-		if [ ${#indir[*]} -gt 0 ]; then
+		if [ ${#indir[@]} -gt 0 ]; then
 			if [[ $nocd ]]; then
-				dirs=(${indir[*]/#/$d/})
+				dirs=(${indir[@]/#/$d/})
 			else
-				dirs=(${indir[*]})
+				dirs=(${indir[@]})
 			fi
 		else
 			if [[ $nocd ]]; then
@@ -26,14 +37,14 @@ function recurse {
 				dirs=(*/)
 			fi
 		fi
-		if [ ${#exdir[*]} -gt 0 ]; then
+		if [ ${#exdir[@]} -gt 0 ]; then
 			if [[ $nocd ]]; then
-				exclude=(${exdir[*]/#/$d/})
+				exclude=(${exdir[@]/#/$d/})
 			else
-				exclude=(${exdir[*]})
+				exclude=(${exdir[@]})
 			fi
-			count=${#dirs[*]}
-			for e in ${exclude[*]}; do
+			count=${#dirs[@]}
+			for e in ${exclude[@]}; do
 				i=0
 				while [ $i -lt $count ]; do
 					if [[ ${dirs[i]%/} == ${e%/} ]]; then
@@ -47,26 +58,24 @@ function recurse {
 
 		DIR="$d"
 		[[ $nocd ]] || CWD="${PWD#*$ROOT/}"
-		printf "$script" | $program ${ARGS[*]}
-		recurse "${dirs[@]}"
+		"$script"
+		(( ${#dirs[@]} )) && recurse "${dirs[@]}"
 		((DEPTH--))
 		[[ $nocd ]] || cd ..
 	done
 }
 
-shopt -s nullglob
-
-if [[ $1 == "--help" ]]; then
+if [[ ${1-} == "--help" ]]; then
 	cat <<-'EOF'
 		usage: redo [.] [+include_glob ...] [-exclude_glob ...] [dir ...] < script
 		variables: $DIR, $CWD, $COUNT, $INDEX, $DEPTH, $RUNS
-		           $ROOT, $ARGS, $RCOUNT, $RINDEX
+		           $ROOT, $RCOUNT, $RINDEX
 	EOF
 	exit
 fi
-if [[ $1 == "--version" ]]; then
-	echo "redo 1.0"
-	echo "Copyright 2017 Bernhard Waldbrunner"
+if [[ ${1-} == "--version" ]]; then
+	echo "redo 1.1"
+	echo "Copyright 2017-2019 Bernhard Waldbrunner"
 	exit
 fi
 
@@ -74,33 +83,25 @@ indir=()
 exdir=()
 dirs=()
 nocd=
-export DIR CWD RCOUNT ARGS RINDEX=0 DEPTH=0 RUNS=0 ROOT="$PWD"
+export DIR CWD RCOUNT RINDEX=0 DEPTH=0 RUNS=0 ROOT="$PWD"
 
 for arg in "$@"; do
 	if [[ ${arg:0:1} == '-' ]]; then
-		exdir[${#exdir[*]}]="${arg:1}"
+		exdir[${#exdir[@]}]="${arg:1}"
 	elif [[ ${arg:0:1} == '+' ]]; then
-		indir[${#indir[*]}]="${arg:1}"
+		indir[${#indir[@]}]="${arg:1}"
 	elif [[ $arg == '.' ]]; then
 		nocd=1
 		CWD="."
 	else
-		dirs[${#dirs[*]}]="$arg"
+		dirs[${#dirs[@]}]="$arg"
 	fi
 done
 
-[ ${#dirs[*]} -eq 0 ] && dirs=(*/)
+[ ${#dirs[@]} -eq 0 ] && dirs=(*/)
 
-IFS=$'\n' read program
-script=$(</dev/stdin)
-if [[ ${program:0:2} == '#!' ]]; then
-	program=(${program:2})
-	ARGS=(${program[@]:1})
-	program=${program[@]:0:1}
-else
-	script="$program"$'\n'"$script"
-	program=$SHELL
-	args=
-fi
-
-IFS=$'\n' recurse "${dirs[@]}"
+script=$(mktemp -t redo)
+cat > "$script"
+chmod +x "$script"
+recurse "${dirs[@]}"
+rm -f "$script"
