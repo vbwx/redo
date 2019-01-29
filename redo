@@ -13,11 +13,11 @@ function recurse {
 		((INDEX++))
 		d="${d%/}"
 		if ! [[ -d $d ]]; then
-			echo "redo: $CWD/$d: No such directory" >&2
+			echo "redo: ${CWD:+$CWD/}$d: No such directory" >&2
 			continue
 		fi
 		if ! [[ -x $d && -r $d ]]; then
-			echo "redo: $CWD/$d: Permission denied" >&2
+			echo "redo: ${CWD:+$CWD/}$d: Permission denied" >&2
 			continue
 		fi
 		[[ $nocd ]] || cd "$d"
