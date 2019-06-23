@@ -6,10 +6,10 @@ IFS=$'\t\n'
 
 function recurse {
 	declare -x INDEX=0 COUNT=$#
-	[ $DEPTH -eq 0 ] && RCOUNT=$#
+	((DEPTH)) || RCOUNT=$#
 
 	for d in "$@"; do
-		[ $DEPTH -eq 0 ] && ((RINDEX++))
+		((DEPTH)) || ((RINDEX++))
 		((INDEX++))
 		d="${d%/}"
 		if ! [[ -d $d ]]; then
@@ -24,7 +24,7 @@ function recurse {
 		((DEPTH++))
 		((RUNS++))
 
-		if [ ${#indir[@]} -gt 0 ]; then
+		if ((${#indir[@]})); then
 			if [[ $nocd ]]; then
 				dirs=(${indir[@]/#/$d/})
 			else
@@ -37,7 +37,7 @@ function recurse {
 				dirs=(*/)
 			fi
 		fi
-		if [ ${#exdir[@]} -gt 0 ]; then
+		if ((${#exdir[@]})); then
 			if [[ $nocd ]]; then
 				exclude=(${exdir[@]/#/$d/})
 			else
@@ -59,7 +59,7 @@ function recurse {
 		DIR="$d"
 		[[ $nocd ]] || CWD="${PWD#*$ROOT/}"
 		"$script"
-		(( ${#dirs[@]} )) && recurse "${dirs[@]}"
+		((${#dirs[@]})) && recurse "${dirs[@]}"
 		((DEPTH--))
 		[[ $nocd ]] || cd ..
 	done
@@ -74,7 +74,7 @@ if [[ ${1-} == "--help" ]]; then
 	exit
 fi
 if [[ ${1-} == "--version" ]]; then
-	echo "redo 1.1"
+	echo "redo 1.2"
 	echo "Copyright 2017-2019 Bernhard Waldbrunner"
 	exit
 fi
@@ -98,10 +98,15 @@ for arg in "$@"; do
 	fi
 done
 
-[ ${#dirs[@]} -eq 0 ] && dirs=(*/)
+((${#dirs[@]})) || dirs=(*/)
 
-script=$(mktemp -t redo)
-cat > "$script"
-chmod +x "$script"
-recurse "${dirs[@]}"
-rm -f "$script"
+if ((${#dirs[@]})); then
+	script=$(mktemp -t redo)
+	read -r line
+	[[ ${line:0:2} == '#!' ]] || printf "#!%s\n" "$SHELL" > "$script"
+	printf "%s\n" "$line" >> "$script"
+	cat >> "$script"
+	chmod +x "$script"
+	recurse "${dirs[@]}"
+	rm -f "$script"
+fi
