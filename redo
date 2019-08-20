@@ -13,32 +13,32 @@ function recurse {
 		((INDEX++))
 		d="${d%/}"
 		if ! [[ -d $d ]]; then
-			echo "redo: ${CWD:+$CWD/}$d: No such directory" >&2
+			echo "redo: ${CWD:+$CWD/}$d: no such directory" >&2
 			continue
 		fi
 		if ! [[ -x $d && -r $d ]]; then
-			echo "redo: ${CWD:+$CWD/}$d: Permission denied" >&2
+			echo "redo: ${CWD:+$CWD/}$d: permission denied" >&2
 			continue
 		fi
-		[[ $nocd ]] || cd "$d"
+		((nocwd)) || cd "$d"
 		((DEPTH++))
 		((RUNS++))
 
 		if ((${#indir[@]})); then
-			if [[ $nocd ]]; then
+			if ((nocwd)); then
 				dirs=(${indir[@]/#/$d/})
 			else
 				dirs=(${indir[@]})
 			fi
 		else
-			if [[ $nocd ]]; then
+			if ((nocwd)); then
 				dirs=("$d"/*/)
 			else
 				dirs=(*/)
 			fi
 		fi
 		if ((${#exdir[@]})); then
-			if [[ $nocd ]]; then
+			if ((nocwd)); then
 				exclude=(${exdir[@]/#/$d/})
 			else
 				exclude=(${exdir[@]})
@@ -57,24 +57,29 @@ function recurse {
 		fi
 
 		DIR="$d"
-		[[ $nocd ]] || CWD="${PWD#*$ROOT/}"
-		"$script"
+		((nocwd)) || CWD="${PWD#*$ROOT/}"
+		err=0
+		"$script" || err=$?
+		if ((err)); then
+			((strict)) && exit $err
+			((quiet)) || echo "redo: error $?" >&2
+		fi
 		((${#dirs[@]})) && recurse "${dirs[@]}"
 		((DEPTH--))
-		[[ $nocd ]] || cd ..
+		((nocwd)) || cd ..
 	done
 }
 
 if [[ ${1-} == "--help" ]]; then
 	cat <<-'EOF'
-		usage: redo [.] [+include_glob ...] [-exclude_glob ...] [dir ...] < script
+		usage: redo [--quiet | --strict] [--nocwd] [+include_glob ...] [-exclude_glob ...] [dir ...] < script
 		variables: $DIR, $CWD, $COUNT, $INDEX, $DEPTH, $RUNS
 		           $ROOT, $RCOUNT, $RINDEX
 	EOF
 	exit
 fi
 if [[ ${1-} == "--version" ]]; then
-	echo "redo 1.2"
+	echo "redo 1.3"
 	echo "Copyright 2017-2019 Bernhard Waldbrunner"
 	exit
 fi
@@ -82,17 +87,23 @@ fi
 indir=()
 exdir=()
 dirs=()
-nocd=
+nocwd=0
+strict=0
+quiet=0
 export DIR CWD RCOUNT RINDEX=0 DEPTH=0 RUNS=0 ROOT="$PWD"
 
 for arg in "$@"; do
-	if [[ ${arg:0:1} == '-' ]]; then
+	if [[ $arg == '--nocwd' ]]; then
+		nocwd=1
+		CWD="."
+	elif [[ $arg == '--strict' ]]; then
+		strict=1
+	elif [[ $arg == '--quiet' ]]; then
+		quiet=1
+	elif [[ ${arg:0:1} == '-' ]]; then
 		exdir[${#exdir[@]}]="${arg:1}"
 	elif [[ ${arg:0:1} == '+' ]]; then
 		indir[${#indir[@]}]="${arg:1}"
-	elif [[ $arg == '.' ]]; then
-		nocd=1
-		CWD="."
 	else
 		dirs[${#dirs[@]}]="$arg"
 	fi
