@@ -79,7 +79,7 @@ if [[ ${1-} == "--help" ]]; then
 	exit
 fi
 if [[ ${1-} == "--version" ]]; then
-	echo "redo 1.3"
+	echo "redo 1.3.1"
 	echo "Copyright 2017-2019 Bernhard Waldbrunner"
 	exit
 fi
@@ -117,6 +117,7 @@ if ((${#dirs[@]})); then
 	[[ ${line:0:2} == '#!' ]] || printf "#!%s\n" "$SHELL" > "$script"
 	printf "%s\n" "$line" >> "$script"
 	cat >> "$script"
+	echo true >> "$script"
 	chmod +x "$script"
 	recurse "${dirs[@]}"
 	rm -f "$script"
