@@ -13,11 +13,11 @@ function recurse {
 		((INDEX++))
 		d="${d%/}"
 		if ! [[ -d $d ]]; then
-			echo "redo: ${CWD:+$CWD/}$d: no such directory" >&2
+			((quiet)) || echo "redo: ${CWD:+$CWD/}$d: no such directory" >&2
 			continue
 		fi
 		if ! [[ -x $d && -r $d ]]; then
-			echo "redo: ${CWD:+$CWD/}$d: permission denied" >&2
+			((quiet)) || echo "redo: ${CWD:+$CWD/}$d: permission denied" >&2
 			continue
 		fi
 		((nocwd)) || cd "$d"
@@ -46,7 +46,7 @@ function recurse {
 			count=${#dirs[@]}
 			for e in ${exclude[@]}; do
 				i=0
-				while [ $i -lt $count ]; do
+				while ((i < count)); do
 					if [[ ${dirs[i]%/} == ${e%/} ]]; then
 						unset 'dirs[i]'
 						break
@@ -62,7 +62,7 @@ function recurse {
 		"$script" || err=$?
 		if ((err)); then
 			((strict)) && exit $err
-			((quiet)) || echo "redo: error $?" >&2
+			((quiet)) || echo "redo: error $err" >&2
 		fi
 		((${#dirs[@]})) && recurse "${dirs[@]}"
 		((DEPTH--))
@@ -70,17 +70,18 @@ function recurse {
 	done
 }
 
-if [[ ${1-} == "--help" ]]; then
+if [[ ${1-} == '--help' ]]; then
 	cat <<-'EOF'
-		usage: redo [--quiet | --strict] [--nocwd] [+include_glob ...] [-exclude_glob ...] [dir ...] < script
+		usage: redo [--quiet | --strict] [--nocwd] [+INCLUDE_GLOB ...]
+		            [-EXCLUDE_GLOB ...] [DIR ...] < SCRIPT
 		variables: $DIR, $CWD, $COUNT, $INDEX, $DEPTH, $RUNS
 		           $ROOT, $RCOUNT, $RINDEX
 	EOF
 	exit
 fi
-if [[ ${1-} == "--version" ]]; then
-	echo "redo 1.3.1"
-	echo "Copyright 2017-2019 Bernhard Waldbrunner"
+if [[ ${1-} == '--version' ]]; then
+	echo "redo 1.4.2"
+	echo "Copyright 2017-2020 Bernhard Waldbrunner"
 	exit
 fi
 
@@ -90,26 +91,52 @@ dirs=()
 nocwd=0
 strict=0
 quiet=0
+opt=1
 export DIR CWD RCOUNT RINDEX=0 DEPTH=0 RUNS=0 ROOT="$PWD"
 
 for arg in "$@"; do
-	if [[ $arg == '--nocwd' ]]; then
-		nocwd=1
-		CWD="."
-	elif [[ $arg == '--strict' ]]; then
-		strict=1
-	elif [[ $arg == '--quiet' ]]; then
-		quiet=1
-	elif [[ ${arg:0:1} == '-' ]]; then
-		exdir[${#exdir[@]}]="${arg:1}"
-	elif [[ ${arg:0:1} == '+' ]]; then
-		indir[${#indir[@]}]="${arg:1}"
+	if [[ $opt ]]; then
+		if [[ $arg == '--' ]]; then
+			opt=''
+		elif [[ $arg == '--nocwd' ]]; then
+			nocwd=1
+			CWD="."
+		elif [[ $arg == '--strict' ]]; then
+			strict=1
+		elif [[ $arg == '--quiet' ]]; then
+			quiet=1
+		elif [[ ${arg:0:1} == '-' ]]; then
+			exdir[${#exdir[@]}]="${arg:1}"
+		elif [[ ${arg:0:1} == '+' ]]; then
+			indir[${#indir[@]}]="${arg:1}"
+		else
+			dirs[${#dirs[@]}]="$arg"
+		fi
 	else
 		dirs[${#dirs[@]}]="$arg"
 	fi
 done
 
-((${#dirs[@]})) || dirs=(*/)
+if ((!${#dirs[@]})); then
+	if ((${#indir[@]})); then
+		dirs=(${indir[@]})
+	else
+		dirs=(*/)
+	fi
+	count=${#dirs[@]}
+	if ((${#exdir[@]})); then
+		for e in ${exdir[@]}; do
+			i=0
+			while ((i < count)); do
+				if [[ ${dirs[i]%/} == ${e%/} ]]; then
+					unset 'dirs[i]'
+					break
+				fi
+				((i++))
+			done
+		done
+	fi
+fi
 
 if ((${#dirs[@]})); then
 	script=$(mktemp -t redo)
