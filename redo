@@ -20,7 +20,7 @@ function recurse {
 			((quiet)) || echo "redo: ${CWD:+$CWD/}$d: permission denied" >&2
 			continue
 		fi
-		((nocwd)) || cd "$d"
+		((nocwd)) || cd "./$d"
 		((DEPTH++))
 		((RUNS++))
 
@@ -139,7 +139,7 @@ if ((!${#dirs[@]})); then
 fi
 
 if ((${#dirs[@]})); then
-	script=$(mktemp -t redo)
+	script="$(mktemp -t redo)"
 	read -r line
 	[[ ${line:0:2} == '#!' ]] || printf "#!%s\n" "$SHELL" > "$script"
 	printf "%s\n" "$line" >> "$script"
