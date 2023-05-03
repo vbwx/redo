@@ -72,7 +72,7 @@ function recurse {
 
 if [[ ${1-} == '--help' ]]; then
 	cat <<-'EOF'
-		usage: redo [--quiet | --strict] [--nocwd] [+INCLUDE_GLOB ...]
+		usage: redo [--quiet] [--strict] [--nocwd] [+INCLUDE_GLOB ...]
 		            [-EXCLUDE_GLOB ...] [DIR ...] < SCRIPT
 		variables: $DIR, $CWD, $COUNT, $INDEX, $DEPTH, $RUNS
 		           $ROOT, $RCOUNT, $RINDEX
