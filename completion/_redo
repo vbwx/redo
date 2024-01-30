@@ -1,0 +1,11 @@
+#compdef redo
+
+# Completion function for zsh
+
+_arguments -S -s \
+	'--quiet' \
+	'--strict' \
+	'--nocwd' \
+	'(- :)--version' \
+	'(- :)--help' \
+	'*:file or directory:_files' \

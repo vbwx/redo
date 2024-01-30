@@ -1,0 +1,11 @@
+# bash completion for redo
+
+have redo &&
+_redo() {
+	local cur
+	COMPREPLY=()
+	_get_comp_words_by_ref cur
+	local opts="--quiet --strict --nocwd --help --version"
+	[[ $cur == -* ]] && COMPREPLY=($(compgen -W "$opts" -- "$cur"))
+} &&
+complete -o bashdefault -o default -F _redo redo
