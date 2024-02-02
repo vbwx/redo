@@ -3,9 +3,14 @@
 # Completion function for zsh
 
 _arguments -S -s \
-	'--quiet' \
-	'--strict' \
-	'--nocwd' \
+	'--quiet[suppress most error messages]' \
+	'--strict[abort execution if a non-zero exit status occurs]' \
+	'--nocd[do not change the working directory]' \
+	'--follow[follow all symbolic links]' \
+	'--arg=[pass environment variable as argument to the program]:variable name:(DIR CWD COUNT RCOUNT INDEX RINDEX DEPTH RUNS ROOT)' \
+	'(--mindepth --maxdepth)--depth=[execute programs only at the given directory level]:integer: ' \
+	'(--depth)--mindepth=[execute programs starting at the given directory level]:integer: ' \
+	'(--depth)--maxdepth=[descend at most to the given directory level]:integer: ' \
 	'(- :)--version' \
 	'(- :)--help' \
 	'*:file or directory:_files' \

@@ -2,10 +2,25 @@
 
 have redo &&
 _redo() {
-	local cur
+	local cur prev
 	COMPREPLY=()
-	_get_comp_words_by_ref cur
-	local opts="--quiet --strict --nocwd --help --version"
-	[[ $cur == -* ]] && COMPREPLY=($(compgen -W "$opts" -- "$cur"))
+	_get_comp_words_by_ref cur prev
+	local opts=(
+		--quiet --strict --nocwd --nocd --follow
+		--depth --mindepth --maxdepth --arg
+		--help --version
+	)
+	case $prev in
+		(--arg)
+			COMPREPLY=(DIR CWD COUNT RCOUNT INDEX RINDEX DEPTH RUNS ROOT)
+			return;;
+		(--depth|--mindepth|--maxdepth)
+			COMPREPLY=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
+			return;;
+	esac
+
+	fi
+	[[ $cur == -* ]] && COMPREPLY=($(compgen -W "${opts[*]}" -- "$cur"))
+	return 0
 } &&
 complete -o bashdefault -o default -F _redo redo

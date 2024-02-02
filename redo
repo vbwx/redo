@@ -1,151 +1,256 @@
 #!/bin/bash
 
+version="2.0"
+
 set -eu
 shopt -s nullglob
 IFS=$'\t\n'
 
 function recurse {
-	declare -x INDEX=0 COUNT=$#
+	INDEX=0
+	COUNT=$#
 	((DEPTH)) || RCOUNT=$#
+	[[ -n ${maxdepth-} && $DEPTH -eq $maxdepth ]] && return
 
 	for d in "$@"; do
 		((DEPTH)) || ((RINDEX++))
 		((INDEX++))
 		d="${d%/}"
 		if ! [[ -d $d ]]; then
-			((quiet)) || echo "redo: ${CWD:+$CWD/}$d: no such directory" >&2
+			$quiet || echo "redo: ${CWD:+$CWD/}$d: no such directory" >&2
 			continue
 		fi
+		! $follow && [[ -L $d ]] && continue
 		if ! [[ -x $d && -r $d ]]; then
-			((quiet)) || echo "redo: ${CWD:+$CWD/}$d: permission denied" >&2
+			$quiet || echo "redo: ${CWD:+$CWD/}$d: permission denied" >&2
 			continue
 		fi
-		((nocwd)) || cd "./$d"
+		$nocwd || cd "./$d"
 		((DEPTH++))
 		((RUNS++))
 
 		if ((${#indir[@]})); then
-			if ((nocwd)); then
+			if $nocwd; then
 				dirs=(${indir[@]/#/$d/})
 			else
 				dirs=(${indir[@]})
 			fi
 		else
-			if ((nocwd)); then
+			if $nocwd; then
 				dirs=("$d"/*/)
 			else
 				dirs=(*/)
 			fi
 		fi
 		if ((${#exdir[@]})); then
-			if ((nocwd)); then
+			if $nocwd; then
 				exclude=(${exdir[@]/#/$d/})
 			else
 				exclude=(${exdir[@]})
 			fi
-			count=${#dirs[@]}
-			for e in ${exclude[@]}; do
-				i=0
-				while ((i < count)); do
-					if [[ ${dirs[i]%/} == ${e%/} ]]; then
-						unset 'dirs[i]'
-						break
+		fi
+		count=${#dirs[@]}
+		for e in . .. ${exclude[@]+${exclude[@]}}; do
+			i=0
+			while ((i < count)); do
+				[[ ${dirs[i]%/} == ${e%/} ]] && unset 'dirs[i]'
+				((i++))
+			done
+		done
+
+		if [[ -z ${mindepth-} || $DEPTH -ge $mindepth ]]; then
+			DIR="$d"
+			if ! $nocwd; then
+				[[ $d == '.' ]] && CWD='.' || CWD="${PWD#*$ROOT/}"
+			fi
+			err=0
+			exe=''
+			for c in "${cmd[@]}"; do
+				if [[ -z $exe ]]; then
+					exe="$c"
+				else
+					$exe ${c:+"$c"} ${var+"${!var}"} || err=$?
+					if ((err)); then
+						$quiet || echo "redo: ${c:-$exe}: error $err" >&2
+						$strict && exit $err
 					fi
-					((i++))
-				done
+					exe=''
+				fi
 			done
 		fi
 
-		DIR="$d"
-		((nocwd)) || CWD="${PWD#*$ROOT/}"
-		err=0
-		"$script" || err=$?
-		if ((err)); then
-			((strict)) && exit $err
-			((quiet)) || echo "redo: error $err" >&2
-		fi
 		((${#dirs[@]})) && recurse "${dirs[@]}"
 		((DEPTH--))
-		((nocwd)) || cd ..
+		$nocwd || cd ..
 	done
+}
+
+function cleanup {
+	rm -f "$script"
+	exit
 }
 
 if [[ ${1-} == '--help' ]]; then
 	cat <<-'EOF'
-		usage: redo [--quiet] [--strict] [--nocwd] [+INCLUDE_GLOB ...]
-		            [-EXCLUDE_GLOB ...] [DIR ...] < SCRIPT
-		variables: $DIR, $CWD, $COUNT, $INDEX, $DEPTH, $RUNS
-		           $ROOT, $RCOUNT, $RINDEX
+		usage: redo [--quiet] [--strict] [--follow] [--nocd] [--arg VAR]
+		            [--depth N] [--mindepth N] [--maxdepth N]
+		            [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
+		            [DIR ...] [SCRIPT_OR_EXECUTABLE ...]
+		variables: DIR, CWD, COUNT, INDEX, DEPTH, RUNS
+		           ROOT, RCOUNT, RINDEX
 	EOF
 	exit
 fi
 if [[ ${1-} == '--version' ]]; then
-	echo "redo 1.4.2"
-	echo "Copyright 2017-2020 Bernhard Waldbrunner"
+	echo "$0 $version"
+	echo "Copyright 2017-2024 Bernhard Waldbrunner"
 	exit
 fi
 
 indir=()
 exdir=()
 dirs=()
-nocwd=0
-strict=0
-quiet=0
-opt=1
-export DIR CWD RCOUNT RINDEX=0 DEPTH=0 RUNS=0 ROOT="$PWD"
+cmd=()
+nocwd=false
+strict=false
+quiet=false
+follow=false
+opt=true
+glob=true
+export DIR=. CWD=. COUNT=0 RCOUNT=0 INDEX=0 RINDEX=0 DEPTH=0 RUNS=0 ROOT="$PWD"
 
 for arg in "$@"; do
-	if [[ $opt ]]; then
-		if [[ $arg == '--' ]]; then
-			opt=''
-		elif [[ $arg == '--nocwd' ]]; then
-			nocwd=1
-			CWD="."
-		elif [[ $arg == '--strict' ]]; then
-			strict=1
-		elif [[ $arg == '--quiet' ]]; then
-			quiet=1
-		elif [[ ${arg:0:1} == '-' ]]; then
-			exdir[${#exdir[@]}]="${arg:1}"
-		elif [[ ${arg:0:1} == '+' ]]; then
-			indir[${#indir[@]}]="${arg:1}"
-		else
-			dirs[${#dirs[@]}]="$arg"
-		fi
+	if [[ -n ${set-} ]]; then
+		declare $set="$arg"
+		set=''
 	else
-		dirs[${#dirs[@]}]="$arg"
+		if $opt && [[ $arg == '--' ]]; then
+			opt=false
+		elif $opt && [[ $arg == '--nocwd' || $arg == '--nocd' ]]; then
+			nocwd=true
+		elif $opt && [[ $arg == '--arg' ]]; then
+			set=var
+		elif $opt && [[ $arg == --arg=* ]]; then
+			var="${arg:6}"
+		elif $opt && [[ $arg == '--follow' ]]; then
+			follow=true
+		elif $opt && [[ $arg == '--depth' ]]; then
+			set=depth
+		elif $opt && [[ $arg == --depth=* ]]; then
+			depth="${arg:8}"
+		elif $opt && [[ $arg == '--mindepth' ]]; then
+			set=mindepth
+		elif $opt && [[ $arg == --mindepth=* ]]; then
+			mindepth="${arg:8}"
+		elif $opt && [[ $arg == '--maxdepth' ]]; then
+			set=maxdepth
+		elif $opt && [[ $arg == --maxdepth=* ]]; then
+			maxdepth="${arg:8}"
+		elif $opt && [[ $arg == '--strict' ]]; then
+			strict=true
+		elif $opt && [[ $arg == '--quiet' ]]; then
+			quiet=true
+		elif $opt && [[ ${arg:0:2} == '--' ]]; then
+			echo "redo: unrecognized option '${arg:2}'" >&2
+			exit 2
+		elif [[ $arg == '-' || $arg == '+' ]]; then
+			glob=false
+			opt=false
+		elif $glob && [[ ${arg:0:1} == '-' ]]; then
+			[[ $arg == */ ]] || arg+=/
+			exdir+=("${arg:1}")
+		elif $glob && [[ ${arg:0:1} == '+' ]]; then
+			[[ $arg == */ ]] || arg+=/
+			indir+=("${arg:1}")
+		elif [[ -f $arg ]]; then
+			if [[ -x $arg ]]; then
+				cmd+=("$(realpath "$arg")" "")
+			else
+				read -r line < "$arg"
+				if [[ ${line:0:2} == '#!' ]]; then
+					cmd+=("${line:2}")
+				else
+					cmd+=("$SHELL")
+				fi
+				cmd+=("$(realpath "$arg")")
+			fi
+			glob=false
+			opt=false
+		elif [[ -d $arg ]]; then
+			if ! $follow && [[ -L $arg ]]; then
+				$quiet || echo "redo: $arg: symlink not followed" >&2
+			else
+				dirs+=("$arg")
+			fi
+			glob=false
+			opt=false
+		elif ! $strict; then
+			cmd+=("$arg" "")
+			glob=false
+			opt=false
+		else
+			echo "redo: $arg: no such file or directory" >&2
+			exit 1
+		fi
 	fi
 done
 
-if ((!${#dirs[@]})); then
+if [[ -n ${set-} ]]; then
+	echo "redo: option '$set' requires an argument" >&2
+	exit 2
+fi
+if [[ -n ${var+1} ]]; then
+	if [[ -z $var ]]; then
+		echo "redo: option 'arg' requires a variable name as argument" >&2
+		exit 2
+	elif [[ -z ${!var+1} ]]; then
+		echo "redo: undefined variable '$var'" >&2
+		exit 1
+	fi
+fi
+for opt in depth mindepth maxdepth; do
+	if [[ -n ${!opt+1} ]] && [[ -z ${!opt} || ${!opt} =~ [^0-9] ]]; then
+		echo "redo: option '$opt' requires an integer as argument" >&2
+		exit 2
+	fi
+done
+if [[ -n ${depth-} ]]; then
+	mindepth=$depth
+	maxdepth=$depth
+fi
+
+if ! ((${#dirs[@]})); then
 	if ((${#indir[@]})); then
 		dirs=(${indir[@]})
 	else
 		dirs=(*/)
 	fi
 	count=${#dirs[@]}
-	if ((${#exdir[@]})); then
-		for e in ${exdir[@]}; do
-			i=0
-			while ((i < count)); do
-				if [[ ${dirs[i]%/} == ${e%/} ]]; then
-					unset 'dirs[i]'
-					break
-				fi
-				((i++))
-			done
+	for e in . .. ${exdir[@]+${exdir[@]}}; do
+		i=0
+		while ((i < count)); do
+			[[ ${dirs[i]%/} == ${e%/} ]] && unset 'dirs[i]'
+			((i++))
 		done
-	fi
+	done
 fi
 
-if ((${#dirs[@]})); then
-	script="$(mktemp -t redo)"
-	read -r line
-	[[ ${line:0:2} == '#!' ]] || printf "#!%s\n" "$SHELL" > "$script"
-	printf "%s\n" "$line" >> "$script"
-	cat >> "$script"
-	echo true >> "$script"
-	chmod +x "$script"
+((${#dirs[@]})) || exit
+
+if ((${#cmd[@]})); then
 	recurse "${dirs[@]}"
-	rm -f "$script"
+else
+	script="$(mktemp -t redo)"
+	trap cleanup INT
+	read -r line
+	if [[ ${line:0:2} == '#!' ]]; then
+		cmd+=("${line:2}")
+	else
+		cmd+=("$SHELL")
+		printf "%s\n" "$line" > "$script"
+	fi
+	cat >> "$script"
+	cmd+=("$script")
+	recurse "${dirs[@]}"
+	cleanup
 fi

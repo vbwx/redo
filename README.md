@@ -3,7 +3,7 @@
 
 # redo
 
-Instead of doing something like `find . -type d -execdir ... \;` you can run `redo` and simply enter the commands you want to have executed in the working directory recursively.
+Instead of doing something like `find . -type d -execdir ... \;` you can run `redo` and simply enter the commands you want to have executed in the subdirectories of the working directory recursively.
 
 ## Installation
 
@@ -29,12 +29,15 @@ Run `redo --help` to get a quick overview of how to use this utility.
 
 ### Synopsis
 
-    redo [--quiet] [--strict] [--nocwd] [+INCLUDE_GLOB ...]
-         [-EXCLUDE_GLOB ...] [DIR ...] < SCRIPT
+    redo [--quiet] [--strict] [--follow] [--nocd] [--arg VAR]
+         [--mindepth N] [--maxdepth N] [--depth N]
+         [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
+         [DIR ...] [SCRIPT_OR_EXECUTABLE ...]
 
 ### Environment Variables
 
-In the script supplied to `redo`, you can use the following variables.
+You can use the following variables in the script supplied to `redo`.
+Alternatively, you can pass one of these variables (or any environment variable) to the specified script/executable/command as an argument.
 
 - `DIR`
 - `CWD`
