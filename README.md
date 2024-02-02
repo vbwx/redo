@@ -48,3 +48,28 @@ Alternatively, you can pass one of these variables (or any environment variable)
 - `ROOT`
 - `RCOUNT`
 - `RINDEX`
+
+### Examples
+
+```sh
+redo --arg CWD echo
+redo --nocd --arg=DIR echo  # same result
+redo --arg PWD echo  # absolute paths
+```
+
+```sh
+redo --arg=INDEX +.\* +\* -.git echo
+```
+
+```sh
+redo <<< 'echo "($DEPTH) $INDEX/$COUNT: $CWD"'
+```
+
+```sh
+redo --mindepth 2 --maxdepth 3 --arg CWD echo
+```
+
+```sh
+redo --quiet <<< 'SetFile -a E *.*'  # executed in subdirectories recursively
+redo --quiet . <<< 'SetFile -a E *.*'  # also executed in working directory
+```
