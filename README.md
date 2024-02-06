@@ -3,7 +3,7 @@
 
 # redo
 
-Instead of doing something like `find . -type d -execdir ... \;` you can run `redo` and simply enter the commands you want to have executed in the subdirectories of the working directory recursively.
+Instead of doing something like `find . -type d -execdir ... \;` you can run `redo` with the command you want to have executed recursively in the subdirectories of the working directory.
 
 ## Installation
 
@@ -29,10 +29,10 @@ Run `redo --help` to get a quick overview of how to use this utility.
 
 ### Synopsis
 
-    redo [--quiet] [--strict] [--follow] [--nocd] [--arg VAR]
+    redo [--quiet] [--strict] [--follow] [--nocd]
          [--mindepth N] [--maxdepth N] [--depth N]
          [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
-         [DIR ...] [SCRIPT_OR_EXECUTABLE ...]
+         [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
 
 ### Environment Variables
 
@@ -52,13 +52,13 @@ Alternatively, you can pass one of these variables (or any environment variable)
 ### Examples
 
 ```sh
-redo --arg CWD echo
-redo --nocd --arg=DIR echo  # same result
-redo --arg PWD echo  # absolute paths
+redo echo \$CWD
+redo --nocd echo \$DIR  # same result
+redo echo \$PWD  # absolute paths
 ```
 
 ```sh
-redo --arg=INDEX +.\* +\* -.git echo
+redo +.\* +\* -.git echo \$INDEX
 ```
 
 ```sh
@@ -66,10 +66,10 @@ redo <<< 'echo "($DEPTH) $INDEX/$COUNT: $CWD"'
 ```
 
 ```sh
-redo --mindepth 2 --maxdepth 3 --arg CWD echo
+redo --mindepth 2 --maxdepth 3 echo \$CWD
 ```
 
 ```sh
-redo --quiet <<< 'SetFile -a E *.*'  # executed in subdirectories recursively
-redo --quiet . <<< 'SetFile -a E *.*'  # also executed in working directory
+redo --quiet SetFile -a E '*.*'  # executed in subdirectories recursively
+redo --quiet . SetFile -a E '*.*'  # also executed in working directory
 ```

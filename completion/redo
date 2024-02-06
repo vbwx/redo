@@ -7,13 +7,10 @@ _redo() {
 	_get_comp_words_by_ref cur prev
 	local opts=(
 		--quiet --strict --nocwd --nocd --follow
-		--depth --mindepth --maxdepth --arg
+		--depth --mindepth --maxdepth
 		--help --version
 	)
 	case $prev in
-		(--arg)
-			COMPREPLY=(DIR CWD COUNT RCOUNT INDEX RINDEX DEPTH RUNS ROOT)
-			return;;
 		(--depth|--mindepth|--maxdepth)
 			COMPREPLY=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
 			return;;
