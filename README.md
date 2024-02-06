@@ -40,7 +40,7 @@ You can use the following variables in the script supplied to `redo`.
 Alternatively, you can pass one of these variables (or any environment variable) to the specified script/executable/command as an argument.
 
 - `DIR`
-- `CWD`
+- `CWD` (unless `--nocd` is specified)
 - `COUNT`
 - `INDEX`
 - `DEPTH`
