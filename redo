@@ -84,6 +84,7 @@ if [[ ${1-} == '--help' ]]; then
 		            [--mindepth N] [--maxdepth N] [--depth N]
 		            [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
 		            [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
+
 		variables: DIR, CWD, COUNT, INDEX, DEPTH, RUNS
 		           ROOT, RCOUNT, RINDEX
 	EOF
@@ -91,7 +92,7 @@ if [[ ${1-} == '--help' ]]; then
 fi
 if [[ ${1-} == '--version' ]]; then
 	echo "$0 $version"
-	echo "Copyright 2017-2024 Bernhard Waldbrunner"
+	echo "Copyright (c) 2017-2024 Bernhard Waldbrunner"
 	exit
 fi
 
@@ -228,7 +229,7 @@ if [[ -n ${depth-} ]]; then
 	maxdepth=$depth
 fi
 
-if ! ((${#dirs[@]})); then
+if ((${#dirs[@]} == 0)); then
 	if ((${#indir[@]})); then
 		dirs=(${indir[@]})
 	else
