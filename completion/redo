@@ -6,7 +6,7 @@ _redo() {
 	COMPREPLY=()
 	_get_comp_words_by_ref cur prev
 	local opts=(
-		--quiet --strict --nocwd --nocd --follow
+		--quiet --strict --nocwd --nocd --follow --hidden
 		--depth --mindepth --maxdepth
 		--help --version
 	)

@@ -29,7 +29,7 @@ Run `redo --help` to get a quick overview of how to use this utility.
 
 ### Synopsis
 
-    redo [--quiet] [--strict] [--follow] [--nocd]
+    redo [--quiet] [--strict] [--follow] [--hidden] [--nocd]
          [--mindepth N] [--maxdepth N] [--depth N]
          [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
          [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
@@ -58,7 +58,7 @@ redo echo \$PWD  # absolute paths
 ```
 
 ```sh
-redo +.\* +\* -.git echo \$INDEX
+redo --hidden -.git echo \$INDEX
 ```
 
 ```sh

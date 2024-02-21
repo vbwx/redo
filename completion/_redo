@@ -5,8 +5,9 @@
 _arguments -S -s \
 	'--quiet[suppress most error messages]' \
 	'--strict[abort execution if a non-zero exit status occurs]' \
-	'--nocd[do not change the working directory]' \
+	'(--nocd --nocwd)'{--nocd,--nocwd}'[do not change the working directory]' \
 	'--follow[follow all symbolic links]' \
+	'--hidden[include files and directories starting with a dot]' \
 	'(--mindepth --maxdepth)--depth=[execute programs only at the given directory level]:integer: ' \
 	'(--depth)--mindepth=[execute programs starting at the given directory level]:integer: ' \
 	'(--depth)--maxdepth=[descend at most to the given directory level]:integer: ' \

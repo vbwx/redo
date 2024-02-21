@@ -80,7 +80,7 @@ function cleanup {
 
 if [[ ${1-} == '--help' ]]; then
 	cat <<-'EOF'
-		usage: redo [--quiet] [--strict] [--follow] [--nocd]
+		usage: redo [--quiet] [--strict] [--follow] [--hidden] [--nocd]
 		            [--mindepth N] [--maxdepth N] [--depth N]
 		            [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
 		            [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
@@ -126,6 +126,9 @@ for arg in "$@"; do
 			continue
 		elif [[ $arg == '--follow' ]]; then
 			follow=true
+			continue
+		elif [[ $arg == '--hidden' ]]; then
+			shopt -s dotglob
 			continue
 		elif [[ $arg == '--depth' ]]; then
 			set=depth
