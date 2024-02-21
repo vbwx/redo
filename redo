@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.1.1"
+version="2.2"
 
 set -eu
 shopt -s nullglob
@@ -58,7 +58,18 @@ function traverse {
 
 		if [[ -z ${mindepth-} || $DEPTH -ge $mindepth ]]; then
 			DIR="$d"
-			$nocwd || CWD="${PWD#$ROOT/}"
+			if $nocwd; then
+				d="$d/"
+			else
+				CWD="${PWD#$ROOT/}"
+				d=''
+			fi
+			LEAF=1
+			EMPTY=1
+			for e in "$d"*; do
+				[[ -d $e ]] && LEAF='' || EMPTY=''
+			done
+
 			eval "$cmd" ${argv[@]+"${argv[@]}"} && err=0 || err=$?
 			if ((err)); then
 				$quiet || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
@@ -85,7 +96,7 @@ if [[ ${1-} == '--help' ]]; then
 		            [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
 		            [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
 
-		variables: DIR, CWD, COUNT, INDEX, DEPTH, RUNS
+		variables: DIR, CWD, COUNT, INDEX, DEPTH, RUNS, LEAF, EMPTY,
 		           ROOT, RCOUNT, RINDEX
 	EOF
 	exit
@@ -109,7 +120,8 @@ follow=false
 opt=true
 glob=true
 file=true
-export DIR='' CWD='' COUNT=0 RCOUNT=0 INDEX=0 RINDEX=0 DEPTH=0 RUNS=0 ROOT="$PWD"
+export COUNT=0 RCOUNT=0 INDEX=0 RINDEX=0 DEPTH=0 RUNS=0
+export DIR='' CWD='' LEAF='' EMPTY='' ROOT="$PWD"
 
 for arg in "$@"; do
 	if [[ -n $set ]]; then

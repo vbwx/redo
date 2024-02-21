@@ -45,6 +45,8 @@ Alternatively, you can pass one of these variables (or any environment variable)
 - `INDEX`
 - `DEPTH`
 - `RUNS`
+- `LEAF`
+- `EMPTY`
 - `ROOT`
 - `RCOUNT`
 - `RINDEX`
@@ -63,6 +65,10 @@ redo --hidden -.git echo \$INDEX
 
 ```sh
 redo <<< 'echo "($DEPTH) $INDEX/$COUNT: $CWD"'
+```
+
+```sh
+redo echo '"$CWD${LEAF:+ (no subdirs)}${EMPTY:+ (no files)}"'
 ```
 
 ```sh
