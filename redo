@@ -170,9 +170,10 @@ for arg in "$@"; do
 		fi
 	fi
 	if $glob; then
-		if [[ $arg == '+' ]]; then
+		if [[ $arg == [-+] ]]; then
 			glob=false
 			opt=false
+			[[ $arg == '-' ]] && file=false
 			continue
 		elif [[ ${arg:0:1} == '-' ]]; then
 			[[ $arg == */ ]] || arg+=/
