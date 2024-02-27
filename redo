@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.2.1"
+version="2.2.2"
 
 set -eu
 shopt -s nullglob
@@ -68,7 +68,9 @@ function traverse {
 				[[ -d $e ]] && LEAF='' || EMPTY=''
 			done
 
+			shopt -u nullglob
 			eval "$cmd" ${argv[@]+"${argv[@]}"} && err=0 || err=$?
+			shopt -s nullglob
 			if ((err)); then
 				$quiet || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
 				$strict && exit $err
