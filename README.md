@@ -45,8 +45,8 @@ Alternatively, you can pass one of these variables (or any environment variable)
 - `INDEX`
 - `DEPTH`
 - `RUNS`
-- `LEAF`
-- `EMPTY`
+- `FILES`
+- `SUBDIRS`
 - `ROOT`
 - `RCOUNT`
 - `RINDEX`
@@ -68,7 +68,7 @@ redo <<< 'echo "($DEPTH) $INDEX/$COUNT: $CWD"'
 ```
 
 ```sh
-redo echo '"$CWD${LEAF:+ (no subdirs)}${EMPTY:+ (no files)}"'
+redo echo '"$CWD ($SUBDIRS directories, $FILES files)"'
 ```
 
 ```sh
