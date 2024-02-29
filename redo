@@ -72,7 +72,7 @@ function traverse {
 			eval "$cmd" ${argv[@]+"${argv[@]}"} && err=0 || err=$?
 			shopt -s nullglob
 			if ((err)); then
-				$quiet || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
+				$hush || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
 				$strict && exit $err
 			fi
 		fi
@@ -116,6 +116,7 @@ set=''
 nocwd=false
 strict=false
 quiet=false
+hush=false
 follow=false
 opt=true
 glob=true
@@ -165,6 +166,7 @@ for arg in "$@"; do
 			continue
 		elif [[ $arg == '--quiet' ]]; then
 			quiet=true
+			hush=true
 			continue
 		elif [[ ${arg:0:2} == '--' ]]; then
 			echo "redo: unrecognized option '${arg:2}'" >&2
@@ -227,6 +229,7 @@ for arg in "$@"; do
 		glob=false
 		opt=false
 		file=false
+		hush=true
 	fi
 done
 
@@ -270,6 +273,7 @@ else
 	fi
 	cat >> "$script"
 	argv=("\"$script\"")
+	hush=true
 	traverse "${dirs[@]}"
 	cleanup
 fi
