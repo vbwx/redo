@@ -1,14 +1,14 @@
 #!/bin/bash
 
-version="2.2.2"
+version="2.2.3"
 
 set -eu
 shopt -s nullglob
 IFS=$'\n'
 
 function traverse {
-	INDEX=0
-	COUNT=$#
+	local INDEX=0
+	local COUNT=$#
 	((DEPTH)) || RCOUNT=$#
 	[[ ${maxdepth-} && $DEPTH -eq $maxdepth ]] && return
 
@@ -220,13 +220,13 @@ for arg in "$@"; do
 			continue
 		fi
 	fi
-	if [[ ! $cmd ]]; then
+	if [[ $cmd ]]; then
+		argv+=("$arg")
+	else
 		cmd="$arg"
 		glob=false
 		opt=false
 		file=false
-	else
-		argv+=("$arg")
 	fi
 done
 
