@@ -12,52 +12,51 @@ function traverse {
 	((DEPTH)) || RCOUNT=$#
 	[[ ${maxdepth-} && $DEPTH -eq $maxdepth ]] && return
 
-	for d in "$@"; do
+	for DIR in "$@"; do
 		((DEPTH)) || ((RINDEX++))
 		((INDEX++))
-		[[ $d != '/' ]] && d="${d%/}"
-		if ! [[ -d $d ]]; then
-			$quiet || echo "redo: ${CWD:+$CWD/}$d: no such directory" >&2
+		[[ $DIR != '/' ]] && DIR="${DIR%/}"
+		if ! [[ -d $DIR ]]; then
+			((quiet)) || echo "redo: ${CWD:+$CWD/}$DIR: no such directory" >&2
 			continue
 		fi
-		! $follow && [[ -L $d ]] && continue
-		if ! [[ -x $d && -r $d ]]; then
-			$quiet || echo "redo: ${CWD:+$CWD/}$d: permission denied" >&2
+		[[ ! $follow && -L $DIR ]] && continue
+		if ! [[ -x $DIR && -r $DIR ]]; then
+			((quiet)) || echo "redo: ${CWD:+$CWD/}$DIR: permission denied" >&2
 			continue
 		fi
-		$nocwd || cd -- "$d"
+		((nocwd)) || cd -- "$DIR"
 		((DEPTH++))
 		((RUNS++))
 
-		if $nocwd; then
+		if ((nocwd)); then
 			if [[ ${indir-} ]]; then
 				_dirs=()
 				for e in "${indir[@]}"; do
-					_dirs+=("$d"/$e)
+					_dirs+=("$DIR"/$e)
 				done
 			else
-				_dirs=("$d"/*/)
+				_dirs=("$DIR"/*/)
 			fi
 			exclude=()
 			for e in "${exdir[@]}"; do
-				exclude+=("$d"/$e)
+				exclude+=("$DIR"/$e)
 			done
 		else
 			_dirs=(${indir[@]:-*/})
 			exclude=(${exdir[@]})
 		fi
 		dirs=()
-		for i in ${!_dirs[@]}; do
+		for d in ${_dirs[@]+"${_dirs[@]}"}; do
 			for e in "${exclude[@]}"; do
-				[[ "${_dirs[i]}" == "$e" ]] && continue 2
+				[[ "$d" == "$e" ]] && continue 2
 			done
-			dirs+=("${_dirs[i]}")
+			dirs+=("$d")
 		done
 
 		if [[ ! ${mindepth-} || $DEPTH -ge $mindepth ]]; then
-			DIR="$d"
-			if $nocwd; then
-				d="$d/"
+			if ((nocwd)); then
+				d="$DIR/"
 			else
 				CWD="${PWD#$ROOT/}"
 				d=''
@@ -72,14 +71,14 @@ function traverse {
 			eval "$cmd" ${argv[@]+"${argv[@]}"} && err=0 || err=$?
 			shopt -s nullglob
 			if ((err)); then
-				$hush || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
-				$strict && exit $err
+				((hush)) || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
+				((strict)) && exit $err
 			fi
 		fi
 
 		[[ ${dirs-} ]] && traverse "${dirs[@]}"
 		((DEPTH--))
-		$nocwd || cd ..
+		((nocwd)) || cd ..
 	done
 	return 0
 }
@@ -113,14 +112,14 @@ dirs=()
 argv=()
 cmd=''
 set=''
-nocwd=false
-strict=false
-quiet=false
-hush=false
-follow=false
-opt=true
-glob=true
-file=true
+nocwd=''
+strict=''
+quiet=''
+hush=''
+follow=''
+opt=1
+glob=1
+file=1
 export COUNT RCOUNT INDEX RINDEX=0 DEPTH=0 RUNS=0 FILES SUBDIRS
 export DIR CWD='' ROOT="$PWD"
 
@@ -130,15 +129,15 @@ for arg in "$@"; do
 		set=''
 		continue
 	fi
-	if $opt; then
+	if ((opt)); then
 		if [[ $arg == '--' ]]; then
-			opt=false
+			opt=''
 			continue
 		elif [[ $arg == '--nocwd' || $arg == '--nocd' ]]; then
-			nocwd=true
+			nocwd=1
 			continue
 		elif [[ $arg == '--follow' ]]; then
-			follow=true
+			follow=1
 			continue
 		elif [[ $arg == '--hidden' ]]; then
 			shopt -s dotglob
@@ -162,22 +161,22 @@ for arg in "$@"; do
 			maxdepth="${arg:11}"
 			continue
 		elif [[ $arg == '--strict' ]]; then
-			strict=true
+			strict=1
 			continue
 		elif [[ $arg == '--quiet' ]]; then
-			quiet=true
-			hush=true
+			quiet=1
+			hush=1
 			continue
 		elif [[ ${arg:0:2} == '--' ]]; then
 			echo "redo: unrecognized option '${arg:2}'" >&2
 			exit 2
 		fi
 	fi
-	if $glob; then
+	if ((glob)); then
 		if [[ $arg == [-+] ]]; then
-			glob=false
-			opt=false
-			[[ $arg == '-' ]] && file=false
+			glob=''
+			opt=''
+			[[ $arg == '-' ]] && file=''
 			continue
 		elif [[ ${arg:0:1} == '-' ]]; then
 			[[ $arg == */ ]] || arg+=/
@@ -189,20 +188,20 @@ for arg in "$@"; do
 			continue
 		fi
 	fi
-	if $file; then
+	if ((file)); then
 		if [[ $arg == '-' ]]; then
-			glob=false
-			opt=false
-			file=false
+			glob=''
+			opt=''
+			file=''
 			continue
 		elif [[ -d $arg ]]; then
-			if ! $follow && [[ -L $arg ]]; then
-				$quiet || echo "redo: $arg: symlink not followed" >&2
+			if [[ ! $follow && -L $arg ]]; then
+				((quiet)) || echo "redo: $arg: symlink not followed" >&2
 			else
 				dirs+=("$arg")
 			fi
-			glob=false
-			opt=false
+			glob=''
+			opt=''
 			continue
 		elif [[ -f $arg ]]; then
 			if [[ -x $arg ]]; then
@@ -216,9 +215,9 @@ for arg in "$@"; do
 				fi
 				argv=("\"$(realpath -- "$arg")\"")
 			fi
-			glob=false
-			opt=false
-			file=false
+			glob=''
+			opt=''
+			file=''
 			continue
 		fi
 	fi
@@ -226,10 +225,10 @@ for arg in "$@"; do
 		argv+=("$arg")
 	else
 		cmd="$arg"
-		glob=false
-		opt=false
-		file=false
-		hush=true
+		glob=''
+		opt=''
+		file=''
+		hush=1
 	fi
 done
 
@@ -250,11 +249,11 @@ fi
 
 if [[ ! ${dirs-} ]]; then
 	_dirs=(${indir[@]:-*/})
-	for i in ${!_dirs[@]}; do
+	for d in ${_dirs[@]+"${_dirs[@]}"}; do
 		for e in ${exdir[@]}; do
-			[[ "${_dirs[i]}" == "$e" ]] && continue 2
+			[[ "$d" == "$e" ]] && continue 2
 		done
-		dirs+=("${_dirs[i]}")
+		dirs+=("$d")
 	done
 	[[ ${dirs-} ]] || exit 0
 fi
@@ -273,7 +272,7 @@ else
 	fi
 	cat >> "$script"
 	argv=("\"$script\"")
-	hush=true
+	hush=1
 	traverse "${dirs[@]}"
 	cleanup
 fi
