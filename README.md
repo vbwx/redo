@@ -37,7 +37,6 @@ Run `redo --help` to get a quick overview of how to use this utility.
 ### Environment Variables
 
 You can use the following variables in the script supplied to `redo`.
-Alternatively, you can pass one of these variables (or any environment variable) to the specified script/executable/command as an argument.
 
 - `DIR`
 - `CWD` (unless `--nocd` is specified)
