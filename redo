@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.4"
+version="2.4.1"
 
 set -eu
 shopt -s nullglob
@@ -10,7 +10,6 @@ function traverse {
 	local INDEX=0
 	local COUNT=$#
 	((DEPTH)) || RCOUNT=$#
-	[[ ${maxdepth-} && $DEPTH -eq $maxdepth ]] && return
 
 	for DIR in "$@"; do
 		((DEPTH)) || ((RINDEX++))
@@ -47,14 +46,16 @@ function traverse {
 			exclude=(${exdir[@]})
 		fi
 		dirs=()
-		for d in ${_dirs[@]+"${_dirs[@]}"}; do
-			for e in "${exclude[@]}"; do
-				[[ "$d" == "$e" ]] && continue 2
+		if ((DEPTH < maxdepth)); then
+			for d in ${_dirs[@]+"${_dirs[@]}"}; do
+				for e in "${exclude[@]}"; do
+					[[ "$d" == "$e" ]] && continue 2
+				done
+				dirs+=("$d")
 			done
-			dirs+=("$d")
-		done
+		fi
 
-		if [[ ! ${mindepth-} || $DEPTH -ge $mindepth ]]; then
+		if ((DEPTH >= mindepth)); then
 			if ((nocwd)); then
 				d="$DIR/"
 			else
@@ -238,15 +239,20 @@ if [[ $set ]]; then
 	exit 2
 fi
 for opt in depth mindepth maxdepth; do
-	if [[ ${!opt+1} ]] && [[ ! ${!opt} || ${!opt} =~ [^0-9] ]]; then
-		echo "redo: option '$opt' requires an integer as argument" >&2
+	if [[ ${!opt+1} && ! ${!opt} =~ ^[0-9]+$ ]]; then
+		echo "redo: option '$opt' requires a positive integer as argument" >&2
 		exit 2
 	fi
 done
 if [[ ${depth-} ]]; then
 	mindepth=$depth
 	maxdepth=$depth
+else
+	: ${mindepth:=0}
+	: ${maxdepth:=999}
 fi
+
+((maxdepth < 1)) && exit 0
 
 if [[ ! ${dirs-} ]]; then
 	_dirs=(${indir[@]:-*/})
