@@ -47,6 +47,7 @@ Alternatively, you can pass one of these variables (or any environment variable)
 - `RUNS`
 - `FILES`
 - `SUBDIRS`
+- `LEAF`
 - `ROOT`
 - `RCOUNT`
 - `RINDEX`

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.3"
+version="2.4"
 
 set -eu
 shopt -s nullglob
@@ -61,6 +61,7 @@ function traverse {
 				CWD="${PWD#$ROOT/}"
 				d=''
 			fi
+			[[ ${dirs-} ]] && LEAF='' || LEAF=1
 			FILES=0
 			SUBDIRS=0
 			for e in "$d"*; do
@@ -96,7 +97,7 @@ if [[ ${1-} == '--help' ]]; then
 		            [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
 
 		variables: DIR, CWD, COUNT, INDEX, DEPTH, RUNS, FILES, SUBDIRS,
-		           ROOT, RCOUNT, RINDEX
+		           LEAF, ROOT, RCOUNT, RINDEX
 	EOF
 	exit
 fi
@@ -120,7 +121,7 @@ follow=''
 opt=1
 glob=1
 file=1
-export COUNT RCOUNT INDEX RINDEX=0 DEPTH=0 RUNS=0 FILES SUBDIRS
+export COUNT RCOUNT INDEX RINDEX=0 DEPTH=0 RUNS=0 FILES SUBDIRS LEAF
 export DIR CWD='' ROOT="$PWD"
 
 for arg in "$@"; do
