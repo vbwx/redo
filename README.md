@@ -56,7 +56,7 @@ You can use the following variables in the script supplied to `redo`.
 ```sh
 redo echo \$CWD
 redo --nocd echo \$DIR  # same result
-redo echo \$PWD  # absolute paths
+redo echo \$PWD         # absolute paths
 ```
 
 ```sh
@@ -76,6 +76,6 @@ redo --mindepth 2 --maxdepth 3 echo \$CWD
 ```
 
 ```sh
-redo --quiet SetFile -a E '*.*'  # executed in subdirectories recursively
+redo --quiet SetFile -a E '*.*'    # executed in subdirectories recursively
 redo --quiet . SetFile -a E '*.*'  # also executed in working directory
 ```
