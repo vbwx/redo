@@ -30,7 +30,7 @@ Run `redo --help` to get a quick overview of how to use this utility.
 ### Synopsis
 
     redo [--quiet] [--strict] [--follow] [--hidden] [--nocd]
-         [--mindepth N] [--maxdepth N] [--depth N]
+         [--mindepth N | +N] [--maxdepth N | -N] [--depth N | --N]
          [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
          [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
 

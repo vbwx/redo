@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.4.1"
+version="2.5"
 
 set -eu
 shopt -s nullglob
@@ -93,7 +93,7 @@ function cleanup {
 if [[ ${1-} == '--help' ]]; then
 	cat <<-'EOF'
 		usage: redo [--quiet] [--strict] [--follow] [--hidden] [--nocd]
-		            [--mindepth N] [--maxdepth N] [--depth N]
+		            [--mindepth N | +N] [--maxdepth N | -N] [--depth N | --N]
 		            [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
 		            [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
 
@@ -150,17 +150,26 @@ for arg in "$@"; do
 		elif [[ $arg == --depth=* ]]; then
 			depth="${arg:8}"
 			continue
+		elif [[ $arg =~ ^--[1-9][0-9]*$ ]]; then
+			depth="${arg:2}"
+			continue
 		elif [[ $arg == '--mindepth' ]]; then
 			set=mindepth
 			continue
 		elif [[ $arg == --mindepth=* ]]; then
 			mindepth="${arg:11}"
 			continue
+		elif [[ $arg =~ ^\+[1-9][0-9]*$ ]]; then
+			mindepth="${arg:1}"
+			continue
 		elif [[ $arg == '--maxdepth' ]]; then
 			set=maxdepth
 			continue
 		elif [[ $arg == --maxdepth=* ]]; then
 			maxdepth="${arg:11}"
+			continue
+		elif [[ $arg =~ ^-[1-9][0-9]*$ ]]; then
+			maxdepth="${arg:1}"
 			continue
 		elif [[ $arg == '--strict' ]]; then
 			strict=1
