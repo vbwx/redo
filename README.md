@@ -73,6 +73,7 @@ redo echo '"$CWD ($SUBDIRS directories, $FILES files)"'
 
 ```sh
 redo --mindepth 2 --maxdepth 3 echo \$CWD
+redo +2 -3 'echo $CWD'  # same result
 ```
 
 ```sh
