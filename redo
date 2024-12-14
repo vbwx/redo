@@ -26,7 +26,6 @@ function traverse {
 		fi
 		((nocwd)) || cd -- "$DIR"
 		((DEPTH++))
-		((RUNS++))
 
 		if ((nocwd)); then
 			if [[ ${indir-} ]]; then
@@ -69,6 +68,7 @@ function traverse {
 				[[ -d $e ]] && ((++SUBDIRS)) || ((++FILES))
 			done
 
+			((RUNS++))
 			(shopt -u nullglob; eval "$cmd" ${argv[@]+"${argv[@]}"}) && err=0 || err=$?
 			if ((err)); then
 				((hush)) || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
