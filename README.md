@@ -60,7 +60,8 @@ redo echo \$PWD         # absolute paths
 ```
 
 ```sh
-redo --hidden -.git echo \$INDEX
+redo --depth 2 --hidden -.git 'echo $INDEX: $DIR'
+redo --2 --hidden -.git echo \$INDEX: \$DIR  # same result
 ```
 
 ```sh
@@ -72,7 +73,7 @@ redo echo '"$CWD ($SUBDIRS directories, $FILES files)"'
 ```
 
 ```sh
-redo --mindepth 2 --maxdepth 3 echo \$CWD
+redo --mindepth=2 --maxdepth=3 echo \$CWD
 redo +2 -3 'echo $CWD'  # same result
 ```
 
