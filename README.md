@@ -38,18 +38,18 @@ Run `redo --help` to get a quick overview of how to use this utility.
 
 You can use the following variables in the script supplied to `redo`.
 
-- `DIR`
-- `CWD` (unless `--nocd` is specified)
-- `COUNT`
-- `INDEX`
-- `DEPTH`
-- `RUNS`
-- `FILES`
-- `SUBDIRS`
-- `LEAF`
-- `ROOT`
-- `RCOUNT`
-- `RINDEX`
+- `DIR`: string
+- `CWD`: string (empty if `--nocd` is specified)
+- `ROOT`: string
+- `COUNT`: integer
+- `INDEX`: integer
+- `RCOUNT`: integer
+- `RINDEX`: integer
+- `DEPTH`: integer
+- `RUNS`: integer
+- `FILES`: integer
+- `SUBDIRS`: integer
+- `LEAF`: empty string or 1
 
 ### Examples
 
