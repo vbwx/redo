@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.5"
+version="2.5.1"
 
 set -eu
 shopt -s nullglob
@@ -69,9 +69,7 @@ function traverse {
 				[[ -d $e ]] && ((++SUBDIRS)) || ((++FILES))
 			done
 
-			shopt -u nullglob
-			eval "$cmd" ${argv[@]+"${argv[@]}"} && err=0 || err=$?
-			shopt -s nullglob
+			(shopt -u nullglob; eval "$cmd" ${argv[@]+"${argv[@]}"}) && err=0 || err=$?
 			if ((err)); then
 				((hush)) || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
 				((strict)) && exit $err
