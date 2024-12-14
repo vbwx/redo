@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.5.1"
+version="2.6"
 
 set -eu
 shopt -s nullglob
@@ -24,8 +24,6 @@ function traverse {
 			((quiet)) || echo "redo: ${CWD:+$CWD/}$DIR: permission denied" >&2
 			continue
 		fi
-		((nocwd)) || cd -- "$DIR"
-		((DEPTH++))
 
 		if ((nocwd)); then
 			if [[ ${indir-} ]]; then
@@ -41,9 +39,12 @@ function traverse {
 				exclude+=("$DIR"/$e)
 			done
 		else
+			pushd -- "$DIR/" > /dev/null
+			DIR="${DIR##*/}"
 			_dirs=(${indir[@]:-*/})
 			exclude=(${exdir[@]})
 		fi
+		((DEPTH++))
 		dirs=()
 		if ((DEPTH < maxdepth)); then
 			for d in ${_dirs[@]+"${_dirs[@]}"}; do
@@ -78,7 +79,7 @@ function traverse {
 
 		[[ ${dirs-} ]] && traverse "${dirs[@]}"
 		((DEPTH--))
-		((nocwd)) || cd ..
+		((nocwd)) || popd > /dev/null
 	done
 	return 0
 }
