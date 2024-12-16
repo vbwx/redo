@@ -73,7 +73,7 @@ function traverse {
 			(shopt -u nullglob; eval "$cmd" ${argv[@]+"${argv[@]}"}) && err=0 || err=$?
 			if ((err)); then
 				((hush)) || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
-				((strict)) && exit $err
+				((strict)) && cleanup $err
 			fi
 		fi
 
@@ -85,8 +85,8 @@ function traverse {
 }
 
 function cleanup {
-	rm -f "$script"
-	exit 0
+	[[ -f ${script-} ]] && rm -f "$script"
+	exit ${1-}
 }
 
 if [[ ${1-} == '--help' ]]; then
