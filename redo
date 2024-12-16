@@ -276,7 +276,7 @@ fi
 if [[ $cmd ]]; then
 	traverse "${dirs[@]}"
 else
-	script="$(mktemp -t redo)"
+	script="$(mktemp --tmpdir redo.XXXXXXXXXX)"
 	trap cleanup INT
 	read -r line
 	if [[ ${line:0:2} == '#!' ]]; then
