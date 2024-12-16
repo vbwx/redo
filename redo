@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.6"
+version="2.6.1"
 
 set -eu
 shopt -s nullglob
@@ -70,7 +70,25 @@ function traverse {
 			done
 
 			((RUNS++))
-			(shopt -u nullglob; eval "$cmd" ${argv[@]+"${argv[@]}"}) && err=0 || err=$?
+			(
+				shopt -u nullglob
+				if ((hush > 1)); then
+					d="${CWD:-$DIR}"
+					d="${d//\\/\\\\}"
+					d="${d//#/\\#}"
+					d="${d//&/\\&}"
+				fi
+				case $hush in
+					(2) rx="s#^([^:]+/)?redo: [^:]+:#redo: $d:#";;
+					(3) rx="s#^[^:]+/redo\\.[^:]*:#redo: $d: line #";;
+					(*) rx="";;
+				esac
+				if [[ $rx ]]; then
+					eval "$cmd" ${argv[@]+"${argv[@]}"} 2> >(sed -E "$rx" >&2)
+				else
+					eval "$cmd" ${argv[@]+"${argv[@]}"}
+				fi
+			) && err=0 || err=$?
 			if ((err)); then
 				((hush)) || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
 				((strict)) && cleanup $err
@@ -238,7 +256,7 @@ for arg in "$@"; do
 		glob=''
 		opt=''
 		file=''
-		hush=1
+		hush=2
 	fi
 done
 
@@ -287,7 +305,7 @@ else
 	fi
 	cat >> "$script"
 	argv=("\"$script\"")
-	hush=1
+	hush=3
 	traverse "${dirs[@]}"
 	cleanup
 fi
