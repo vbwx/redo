@@ -49,7 +49,7 @@ You can use the following variables in the script supplied to `redo`.
 - `RUNS`: integer
 - `FILES`: integer
 - `SUBDIRS`: integer
-- `LEAF`: empty string or 1
+- `LEAF`: boolean (empty string or 1)
 
 ### Examples
 
