@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="2.6.1"
+version="2.6.2"
 
 set -eu
 shopt -s nullglob
@@ -91,7 +91,7 @@ function traverse {
 			) && err=0 || err=$?
 			if ((err)); then
 				((hush)) || echo "redo: ${CWD:-$DIR}: $cmd: error $err" >&2
-				((strict)) && cleanup $err
+				((strict)) && exit $err
 			fi
 		fi
 
@@ -100,11 +100,6 @@ function traverse {
 		((nocwd)) || popd > /dev/null
 	done
 	return 0
-}
-
-function cleanup {
-	[[ -f ${script-} ]] && rm -f "$script"
-	exit ${1-}
 }
 
 if [[ ${1-} == '--help' ]]; then
@@ -121,7 +116,7 @@ if [[ ${1-} == '--help' ]]; then
 fi
 if [[ ${1-} == '--version' ]]; then
 	echo "$0 $version"
-	echo "Copyright (c) 2017-2024 vbwx"
+	echo "Copyright (c) 2017-2026 vbwx"
 	exit
 fi
 
@@ -233,7 +228,7 @@ for arg in "$@"; do
 			continue
 		elif [[ -f $arg ]]; then
 			if [[ -x $arg ]]; then
-				cmd="\"$(realpath -- "$arg")\""
+				cmd="'$(realpath -- "$arg")'"
 			else
 				read -r line < "$arg"
 				if [[ ${line:0:2} == '#!' ]]; then
@@ -241,7 +236,7 @@ for arg in "$@"; do
 				else
 					cmd="$SHELL"
 				fi
-				argv=("\"$(realpath -- "$arg")\"")
+				argv=("'$(realpath -- "$arg")'")
 			fi
 			glob=''
 			opt=''
@@ -294,8 +289,9 @@ fi
 if [[ $cmd ]]; then
 	traverse "${dirs[@]}"
 else
-	script="$(mktemp --tmpdir redo.XXXXXXXXXX)"
-	trap cleanup INT
+	script="$(mktemp "${TMPDIR-/tmp}/redo.XXXXXXXXXX")"
+	trap 'rm -f "$script"' EXIT
+	trap exit SIGINT
 	read -r line
 	if [[ ${line:0:2} == '#!' ]]; then
 		cmd="${line:2}"
@@ -304,8 +300,7 @@ else
 		printf "%s\n" "$line" > "$script"
 	fi
 	cat >> "$script"
-	argv=("\"$script\"")
+	argv=("'$script'")
 	hush=3
 	traverse "${dirs[@]}"
-	cleanup
 fi
