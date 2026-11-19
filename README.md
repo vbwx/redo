@@ -31,7 +31,7 @@ Run `redo --help` to get a quick overview of how to use this utility.
 
     redo [--quiet] [--strict] [--follow] [--hidden] [--nocd]
          [--mindepth N | +N] [--maxdepth N | -N] [--depth N | --N]
-         [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
+         [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...] [DIR_GLOB ...]
          [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
 
 ### Environment Variables
@@ -79,5 +79,28 @@ redo +2 -3 'echo $CWD'  # same result
 
 ```sh
 redo --quiet SetFile -a E '*.*'    # executed in subdirectories recursively
-redo --quiet . SetFile -a E '*.*'  # also executed in working directory
+redo --quiet . SetFile -a E '*.*'  # executed in working directory and its
+                                   # subdirectories recursively
+```
+
+Given this directory tree:
+```
+.
+├── A
+│   ├── A1
+│   │   └── .ignore
+│   └── A2
+├── B
+│   ├── B1
+│   └── B2
+│       └── .ignore
+└── C
+    ├── C1
+    └── C2
+```
+
+We can do the following:
+```sh
+redo --1 '*/*/.ignore' echo -n '$DIR\ '   # prints "A1 B2"
+redo --1 '*//*/.ignore' echo -n '$DIR\ '  # prints "A B"
 ```

@@ -1,9 +1,10 @@
 #!/bin/bash
 
-version="2.6.2"
+version="2.7"
 
 set -eu
 shopt -s nullglob
+((BASH_VERSINFO[0] >= 4)) && shopt -s globstar
 IFS=$'\n'
 
 function traverse {
@@ -106,7 +107,7 @@ if [[ ${1-} == '--help' ]]; then
 	cat <<-'EOF'
 		usage: redo [--quiet] [--strict] [--follow] [--hidden] [--nocd]
 		            [--mindepth N | +N] [--maxdepth N | -N] [--depth N | --N]
-		            [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...]
+		            [--] [+INCLUDE_GLOB ...] [-EXCLUDE_GLOB ...] [DIR_GLOB ...]
 		            [+] [DIR ...] [-] [SCRIPT_OR_EXECUTABLE [ARG ...]]
 
 		variables: DIR, CWD, COUNT, INDEX, DEPTH, RUNS, FILES, SUBDIRS,
@@ -131,6 +132,7 @@ strict=''
 quiet=''
 hush=''
 follow=''
+dirglob=''
 opt=1
 glob=1
 file=1
@@ -209,6 +211,23 @@ for arg in "$@"; do
 			[[ $arg == */ ]] || arg+=/
 			indir+=("${arg:1}")
 			continue
+		elif [[ $arg == *[\[*?\]]*/*? || $arg == *?/*[\[*?\]]* ]]; then
+			dirglob=1
+			[[ $arg == *//* ]] && pat="/${arg##*//}" || pat="/*"
+			files=(${arg//"//"//})
+			if [[ ${files-} ]]; then
+				for f in "${files[@]}"; do
+					f="${f%$pat}"
+					for d in ${dirs[@]+"${dirs[@]}"}; do
+						[[ "$f" == "${d%/}" ]] && continue 2
+					done
+					dirs+=("$f")
+				done
+			else
+				echo "redo: $arg: no matches" >&2
+			fi
+			unset files
+			continue
 		fi
 	fi
 	if ((file)); then
@@ -273,9 +292,9 @@ else
 	: ${maxdepth:=999}
 fi
 
-((maxdepth < 1)) && exit 0
+((maxdepth < 1)) && exit
 
-if [[ ! ${dirs-} ]]; then
+if [[ ! ${dirs-} && ( ! $dirglob || ${indir-} ) ]]; then
 	_dirs=(${indir[@]:-*/})
 	for d in ${_dirs[@]+"${_dirs[@]}"}; do
 		for e in ${exdir[@]}; do
@@ -283,8 +302,8 @@ if [[ ! ${dirs-} ]]; then
 		done
 		dirs+=("$d")
 	done
-	[[ ${dirs-} ]] || exit 0
 fi
+[[ ${dirs-} ]] || exit
 
 if [[ $cmd ]]; then
 	traverse "${dirs[@]}"
